@@ -112,10 +112,14 @@ contract VETHERBURN {
         mapEraDay_TotalBurnt[era_][day_] = totalBurntForDay;
         mapEraDay_Burnt[era_][day_] = true;
         day += 1;
+        uint vetherToWithdrawYesterday = VETHER(vetherAddress).getEmissionShare(era_, day_-1, address(this));
+        if(vetherToWithdrawYesterday>0){
+            withdraw(era_, day_-1);
+        }
         return true;
     }
 
-    function withdraw(uint era, uint day) public payable returns (uint total){
+    function withdraw(uint era, uint day) private payable returns (uint total){
         uint vetherToWithdraw = VETHER(vetherAddress).getEmissionShare(era, day, address(this));
         VETHER(vetherAddress).withdrawShare(era, day);
         uint totalForDay = mapEraDay_TotalBurnt[era][day];
