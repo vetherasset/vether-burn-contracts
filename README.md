@@ -2,10 +2,12 @@
 
 Vether Burn Contracts will allow members to deposit Ether, then for other people to automate the daily burning process. 
 
-**Member**
+### Member
+
 Simply call `deposit(days)` with an attached amount of Ether, and the number of days to burn over. 
 
-**Burners**
+### Burners
+
 In order to claim the fee of 1%, call `burn()` on the contract. This will
 1) Burn for everyone on the current day
 2) If vether is available for yesterday, it will withdraw it
@@ -16,12 +18,12 @@ Note: `burn()` can only be called once a day, so it's a race once a new day star
 
 ## Smart Contract
 
-Vether Pools has the following intended design:
+Vether Burn has the following intended design:
 
 Users
 * Deposit Ether to burn over several days
 
-Burns
+Burners
 * Burn and Withdraw on behalf of other people for a fee
 
 **Limits**
@@ -114,41 +116,5 @@ truffle test
 
 Or execute individually:
 ```
-truffle test test/1_coin.js
+truffle test test/1_burn.js
 ```
-
-## Analysis
-
-Find in [/analysis](https://github.com/vetherasset/vether-pools-contracts/blob/master/analysis)
-```
-yarn analysis
-```
-
-### [Vether Function Graph](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Graph.png)
-```
-surya graph contracts/VetherPools.sol | dot -Tpng > analysis/Vether-Graph.png
-```
-
-### [Dependency Graph](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Inheritance.png)
-```
-surya inheritance contracts/VetherPools.sol | dot -Tpng > analysis/Vether-Inheritance.png
-```
-
-### [Description Report](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Report.md)
-```
-surya mdreport analysis/Vether-Report.md contracts/VetherPools.sol
-```
-
-### [Describe - Raw](https://github.com/vetherasset/vether-contracts/blob/master/analysis/Vether-Describe.md)
-```
-surya describe contracts/VetherPools.sol
-```
-
-Parse
-```
-surya parse contracts/VetherPools.sol
-```
-
-
-
-
