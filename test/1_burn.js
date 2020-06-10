@@ -11,7 +11,6 @@ const truffleAssert = require('truffle-assertions');
 var BigNumber = require('bignumber.js');
 
 const _ = require('./utils.js');
-const math = require('./math.js');
 
 var VETHER = artifacts.require("./Vether.sol");
 var BURN = artifacts.require("./VetherBurn.sol");
@@ -24,7 +23,7 @@ contract('VETHERBURN', function (accounts) {
     deposit(4, accounts)
     burn()
     rollDay()
-    withdraw()
+    burn()
     depositAgain(5, accounts)
     burnFail()
 })
@@ -47,7 +46,7 @@ function constructor(accounts) {
         const maxEther = _.getBN(await instanceBURN.maxEther())
         assert.equal(maxEther, _.BN2Str(_.oneBN), "maxEther is correct")
         const maxDays = await instanceBURN.maxDays()
-        assert.equal(maxDays, '2', "maxDays is correct")
+        assert.equal(maxDays, '3', "maxDays is correct")
 
         console.log(`Acc0: ${acc0}`)
         console.log(`Acc1: ${acc1}`)
@@ -86,10 +85,15 @@ function burn() {
         var balStartVeth = _.getBN(await web3.eth.getBalance(instanceVETH.address))
         // console.log(_.BN2Str(balStartVeth))
 
+        var daysStart = await instanceBURN.dayTotal()
 
         var era = await instanceVETH.currentEra()
         var day = await instanceVETH.currentDay()
         console.log('burnt in:', _.BN2Str(era),_.BN2Str(day))
+
+        var lastEra = await instanceBURN.lastEra()
+        var lastDay = await instanceBURN.lastDay()
+        console.log('last burn in:', _.BN2Str(lastEra),_.BN2Str(lastDay))
 
         var tx1 = await instanceBURN.burn();
 
@@ -99,15 +103,34 @@ function burn() {
         assert.equal(_.BN2Str(balEndVeth.minus(balStartVeth)), 0)
 
         var shareVeth = await instanceVETH.getEmissionShare(era, day, instanceBURN.address)
+        console.log(_.BN2Str(shareVeth), _.BN2Str(era),_.BN2Str(day))
         assert.equal(_.BN2Str(shareVeth), '2048')
         var units = await instanceVETH.mapEraDay_Units(era, day)
-        assert.equal(_.BN2Str(units), '1000000000000000')
+        assert.equal(_.BN2Str(units), '4000000000000000')
 
         var totalBurnt = await instanceBURN.mapEraDay_TotalBurnt(era, day)
         assert.equal(_.BN2Str(totalBurnt), '4000000000000000')
 
-        var day = await instanceBURN.day()
-        assert.equal(_.BN2Int(day), '2')
+        var daysEnd = await instanceBURN.dayTotal()
+        assert.equal(_.BN2Int(daysEnd)-_.BN2Int(daysStart), '1')
+
+        if(_.BN2Int(lastDay) > 0){
+            // console.log('here')
+            var shareVethYesterday = await instanceVETH.getEmissionShare(lastEra, lastDay, instanceBURN.address)
+            assert.equal(_.BN2Str(shareVethYesterday), '0')
+                
+                var bal0 = await instanceVETH.balanceOf(acc0)
+                var bal1 = await instanceVETH.balanceOf(acc1)
+                var bal2 = await instanceVETH.balanceOf(acc2)
+                var bal3 = await instanceVETH.balanceOf(acc3)
+                var bal4 = await instanceVETH.balanceOf(acc4)
+
+                console.log(_.BN2Str(bal0))
+                console.log(_.BN2Str(bal1),_.BN2Str(bal2))
+                console.log(_.BN2Str(bal3),_.BN2Str(bal4))
+                assert.equal(_.BN2Str(bal0.add(bal1).add(bal2).add(bal3).add(bal4)), '2048')
+        }
+        
     })
 }
 
@@ -160,11 +183,11 @@ function burnFail() {
         var era = await instanceVETH.currentEra()
         var day = await instanceVETH.currentDay()
         console.log('burnt in:', _.BN2Str(era),_.BN2Str(day))
-        await instanceBURN.burn();
+        await truffleAssert.reverts(instanceBURN.burn());
         var era2 = await instanceVETH.currentEra()
         var day2 = await instanceVETH.currentDay()
         console.log('burnt in:', _.BN2Str(era2),_.BN2Str(day2))
-        await instanceBURN.burn();
+        await truffleAssert.reverts(instanceBURN.burn());
         var era3 = await instanceVETH.currentEra()
         var day3 = await instanceVETH.currentDay()
         console.log('burnt in:', _.BN2Str(era3),_.BN2Str(day3))

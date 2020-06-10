@@ -10,7 +10,6 @@ const truffleAssert = require('truffle-assertions');
 var BigNumber = require('bignumber.js');
 
 const _ = require('./utils.js');
-const math = require('./math.js');
 
 var VETHER = artifacts.require("./Vether.sol");
 var BURN = artifacts.require("./VetherBurn.sol");
@@ -90,7 +89,7 @@ async function depositFailDays(n, accounts) {
     it("It deposit fail due days", async () => {
         for (var i = 1; i <= n; i++) {
             
-            var day = await instanceBURN.day()
+            var day = await instanceBURN.dayTotal()
             var maxDays = await instanceBURN.maxDays()
             console.log(i, _.BN2Int(day), _.BN2Int(maxDays))
             if(_.BN2Int(day) > _.BN2Int(maxDays)){
@@ -101,7 +100,7 @@ async function depositFailDays(n, accounts) {
                 await instanceBURN.deposit(_.BN2Str(100), { value: _.BN2Str(_.dot01BN), from: accounts[i] })   
             }
         await instanceBURN.burn();
-        var day = await instanceBURN.day()
+        var day = await instanceBURN.dayTotal()
         console.log(_.BN2Int(day))
         await _.delay(2000) 
         }

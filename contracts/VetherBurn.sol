@@ -42,7 +42,7 @@ contract VETHERBURN {
     uint public maxEther;
     uint public maxDays;
     
-    uint public day;
+    uint public dayTotal;
     uint public etherPooled;
     uint public memberCount;
     address[] public arrayMembers;
@@ -51,18 +51,20 @@ contract VETHERBURN {
         uint etherToBurn;
         uint daysToBurn;
     }
+    uint public lastDay;
+    uint public lastEra;
 
     mapping(uint => mapping(uint => uint)) public mapEraDay_TotalBurnt;
     mapping(uint => mapping(uint => bool)) public mapEraDay_Burnt;
    
     constructor (address payable addressVether) public {
         vetherAddress = addressVether;
-        day = 1;
+        dayTotal = 1;
 
         //local
         maxMembers = 10;
         maxEther = _1;
-        maxDays = 2;
+        maxDays = 3;
 
         //testnet
         // maxMembers = 2;
@@ -81,9 +83,9 @@ contract VETHERBURN {
     function deposit(uint dayCount) public payable returns (bool success) {
         require(etherPooled.add(msg.value) <= maxEther, 'too much ether');
         require(memberCount <= maxMembers, 'too many members');
-        require(day <= maxDays, 'went past max days');
+        require(dayTotal <= maxDays, 'went past max days');
         
-        uint maxDayCount = maxDays.sub(day);
+        uint maxDayCount = maxDays.sub(dayTotal);
         if(maxDayCount >= maxDays){
             mapMemberData[msg.sender].daysToBurn = maxDayCount;  
         } else {
@@ -107,19 +109,21 @@ contract VETHERBURN {
             uint etherToBurn = mapMemberData[member].etherToBurn;
             uint ethToBurnToday = etherToBurn.div(daysToBurn);
             totalBurntForDay += ethToBurnToday;
-            vetherAddress.call.value(ethToBurnToday)(""); 
         }
+        vetherAddress.call.value(totalBurntForDay)(""); 
         mapEraDay_TotalBurnt[era_][day_] = totalBurntForDay;
         mapEraDay_Burnt[era_][day_] = true;
-        day += 1;
-        uint vetherToWithdrawYesterday = VETHER(vetherAddress).getEmissionShare(era_, day_-1, address(this));
+        dayTotal += 1;
+        uint vetherToWithdrawYesterday = VETHER(vetherAddress).getEmissionShare(lastEra, lastDay, address(this));
         if(vetherToWithdrawYesterday>0){
-            withdraw(era_, day_-1);
+            withdraw(lastEra, lastDay);
         }
+        lastEra = era_;
+        lastDay = day_;
         return true;
     }
 
-    function withdraw(uint era, uint day) private payable returns (uint total){
+    function withdraw(uint era, uint day) private returns (uint total){
         uint vetherToWithdraw = VETHER(vetherAddress).getEmissionShare(era, day, address(this));
         VETHER(vetherAddress).withdrawShare(era, day);
         uint totalForDay = mapEraDay_TotalBurnt[era][day];
